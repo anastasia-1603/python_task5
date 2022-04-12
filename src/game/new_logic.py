@@ -75,7 +75,7 @@ class Board(object):
 
     def take_block(self, x):
         y = self.find_bottom_block(x)
-        self.set_color_at(self.curr_x, self.curr_y, self.color_at(x, y))
+        self.curr_block_color = self.color_at(x,  y)
         self.remove_block(x, y)
 
     def try_move(self, new_x, new_y):
@@ -88,7 +88,7 @@ class Board(object):
     def set_block(self, x):
         y = self.find_bottom_block(x) + 1
         self.set_color_at(x, y, self.curr_block_color)
-        self.set_color_at(self.curr_x, self.curr_y, BlockColors.WHITE)
+        self.curr_block_color = BlockColors.WHITE
 
     def remove_block(self, x, y):
         self.set_color_at(x, y, BlockColors.NO_COLOR)

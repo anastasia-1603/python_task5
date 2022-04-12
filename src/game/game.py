@@ -24,7 +24,7 @@ class AntiTetris(QMainWindow):
 
 class GameFrame(QFrame):
     msg2Statusbar = pyqtSignal(str)
-    SPEED = 3000
+    SPEED = 30000
 
     def __init__(self, parent):
         super().__init__(parent)

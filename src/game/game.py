@@ -99,8 +99,8 @@ class GameFrame(QFrame):
 
 
 if __name__ == '__main__':
-    board = new_logic.Board()
-    new_logic.print_board(board)
+    # board = new_logic.Board()
+    # new_logic.print_board(board)
     # print(5*"\n")
     # board.move_down()
     # new_logic.print_board(board)
@@ -108,6 +108,6 @@ if __name__ == '__main__':
     # print(5*"\n")
     # new_logic.print_board(board)
 
-    # app = QApplication(sys.argv)
-    # tetris = AntiTetris()
-    # sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    tetris = AntiTetris()
+    sys.exit(app.exec_())

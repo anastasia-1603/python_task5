@@ -57,7 +57,8 @@ class Board(object):
         self.board[y][x] = color
 
     def fill_board(self, rows):
-        [[random_color() for _ in range(self.board_width)] for _ in range(rows)]
+        for i in range(rows):
+            self.board[i] = [random_color() for _ in range(self.board_width)]
 
     def move_down(self):
         bottom_row = self.find_bottom_block_in_board()

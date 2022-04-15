@@ -1,5 +1,6 @@
 from enum import Enum
 import random
+import copy
 
 
 class BlockColors(Enum):
@@ -48,6 +49,7 @@ class Board(object):
         self.board = [[BlockColors.NO_COLOR for _ in range(self.board_width)] for _ in range(self.board_height)]
         self.fill_board(init_rows)
         # self.board[self.curr_y][self.curr_x] = self.curr_block_color
+        self.is_visited = [[False for _ in range(self.board_width)] for _ in range(self.board_height)]
         self.removed_blocks = 0
 
     def color_at(self, x, y):
@@ -89,12 +91,13 @@ class Board(object):
         y = self.find_bottom_block(x) + 1
         color = self.curr_block_color
         self.set_color_at(x, y, color)
-        if self.is_have_equal_around(x, y, color):
+        if self.is_have_equal_around(x, y, color) and self.count_equal(x, y, color) > 3:
             self.remove_blocks(x, y, color)
         self.curr_block_color = BlockColors.WHITE
+        self.is_visited = [[False for _ in range(self.board_width)] for _ in range(self.board_height)]
 
     def remove_blocks(self, x, y, color):
-        if x < 0 or x > self.board_width-1 or y < 0 or y > self.board_height:
+        if x < 0 or x > self.board_width - 1 or y < 0 or y > self.board_height:
             return
         elif self.color_at(x, y) == color:
             self.remove_block(x, y)
@@ -103,11 +106,24 @@ class Board(object):
             self.remove_blocks(x, y - 1, color)
             self.remove_blocks(x, y + 1, color)
             self.removed_blocks = self.removed_blocks + 1
-        else:
-            return
 
     def remove_block(self, x, y):
         self.set_color_at(x, y, BlockColors.NO_COLOR)
+
+    def count_equal(self, x, y, color):
+        count = 0
+        if x < 0 or x > self.board_width - 1 or y < 0 or y > self.board_height:
+            return 0
+        elif self.color_at(x, y) == color and self.is_visited[y][x] is False:
+            self.is_visited[y][x] = True
+            count = count + 1
+            count = count + self.count_equal(x + 1, y, color)
+            count = count + self.count_equal(x, y - 1, color)
+            count = count + self.count_equal(x - 1, y, color)
+            count = count + self.count_equal(x, y + 1, color)
+            return count
+        else:
+            return 0
 
     def is_have_equal_around(self, x, y, color):
         return ((x-1 > 0 and self.color_at(x-1, y) == color) or

@@ -12,11 +12,12 @@ class AntiTetris(QMainWindow):
         super().__init__()
 
         self.game_board = GameFrame(self)  # todo start game and game over
-        self.setCentralWidget(self.game_board)  # todo logic.py and game.py
+        self.setCentralWidget(self.game_board)  # todo удаление больше 3 блоков и взятие нескольких
         self.status_bar = self.statusBar()
         self.game_board.msg2Statusbar[str].connect(self.status_bar.showMessage)
         self.game_board.start()
-        self.setStyleSheet("background-color: white;")  # todo смещение удаленных блоков вверх
+        self.setStyleSheet("background-color: white;")  # todo смещение удаленных блоков вверх и
+        # todo удаление, если цвета сопадают
         self.resize(800, 600)  # todo логика удаления
         self.setWindowTitle('Тетрис наоборот')  # todo убрать у из curr block
         self.show()

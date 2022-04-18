@@ -1,9 +1,9 @@
 import sys
-import new_logic
+import logic
 
 from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
-from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication
+from PyQt5.QtGui import QPainter, QColor, QPixmap
+from PyQt5.QtWidgets import QMainWindow, QLabel, QFrame, QDesktopWidget, QApplication, QVBoxLayout, QWidget, QHBoxLayout
 
 
 class AntiTetris(QMainWindow):
@@ -12,25 +12,25 @@ class AntiTetris(QMainWindow):
         super().__init__()
 
         self.game_board = GameFrame(self)  # todo start game and game over
-        self.setCentralWidget(self.game_board)  # todo удаление больше 3 блоков и взятие нескольких
+        self.setCentralWidget(self.game_board)  # todo  взятие нескольких блоков
         self.status_bar = self.statusBar()
         self.game_board.msg2Statusbar[str].connect(self.status_bar.showMessage)
         self.game_board.start()
-        self.setStyleSheet("background-color: white;")  # todo смещение удаленных блоков вверх и
+        self.setStyleSheet("background-color: white;")
         # todo удаление, если цвета сопадают
         self.resize(800, 600)  # todo логика удаления
         self.setWindowTitle('Тетрис наоборот')  # todo убрать у из curr block
         self.show()
 
 
-class GameFrame(QFrame):
+class GameFrame(QWidget):
     msg2Statusbar = pyqtSignal(str)
-    SPEED = 30000
+    SPEED = 30
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.board = new_logic.Board()
-        self.points = 0
+        self.board = logic.Board()
+
         self.timer = QBasicTimer()
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -41,25 +41,40 @@ class GameFrame(QFrame):
         return self.contentsRect().height() // self.board.board_height
 
     def start(self):
-        self.points = 0
-        self.msg2Statusbar.emit(str(self.points))
+        self.msg2Statusbar.emit(str(self.board.removed_blocks))
         self.timer.start(GameFrame.SPEED, self)
+
+    def game_over(self):
+        self.board.clear()
+        label = QLabel(self)
+        label.setText("Game over")
+        label.setStyleSheet("color: blue;"
+                            "background-color: black;"
+                            "font: bold 100px;"
+                            "text-align: right;")  # todo выравнивание по центру и кнопка restart
+        label.move(0, 0)
+        label.resize(self.contentsRect().width(), self.contentsRect().height())
+
+        # pixmap = QPixmap("F:\\5. Projects python\\4sem\\task5\\src\\resources\\img.png")
+        # label.setPixmap(pixmap)
+
+        label.show()
+        self.timer.stop()
 
     def keyPressEvent(self, event):
         key = event.key()
 
         if key == Qt.Key_Left:
-            new_logic.move_left(self.board)
+            logic.move_left(self.board)
             self.update()
 
         elif key == Qt.Key_Right:
-            new_logic.move_right(self.board)
+            logic.move_right(self.board)
             self.update()
 
         elif key == Qt.Key_Return:
-            new_logic.on_enter(self.board)
+            logic.on_enter(self.board)
             self.update()
-
         else:
             super(GameFrame, self).keyPressEvent(event)
 
@@ -74,7 +89,7 @@ class GameFrame(QFrame):
         for i in range(board_height):
             for j in range(board_width):
                 color = self.board.color_at(j, i)
-                if color != new_logic.BlockColors.NO_COLOR:
+                if color != logic.BlockColors.NO_COLOR:
                     x = rect.left() + (j * self.squareWidth())
                     y = rect.top() + (i * self.squareHeight())
                     curr_x = rect.left() + (self.board.curr_x * self.squareWidth())
@@ -85,7 +100,10 @@ class GameFrame(QFrame):
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
-            self.board.move_down()
+            if self.board.move_down() is False:
+                self.game_over()
+                self.msg2Statusbar.emit("Game over")
+
             self.update()
         else:
             super(GameFrame, self).timerEvent(event)
@@ -100,15 +118,6 @@ class GameFrame(QFrame):
 
 
 if __name__ == '__main__':
-    # board = new_logic.Board()
-    # new_logic.print_board(board)
-    # print(5*"\n")
-    # board.move_down()
-    # new_logic.print_board(board)
-    # new_logic.on_enter(board)
-    # print(5*"\n")
-    # new_logic.print_board(board)
-
     app = QApplication(sys.argv)
     tetris = AntiTetris()
     sys.exit(app.exec_())

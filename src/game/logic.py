@@ -22,22 +22,19 @@ def move_right(board):
 
 
 def on_enter(board):
-    if board.curr_block_color.color == BlockColors.WHITE:
+    if board.curr_block_color == BlockColors.WHITE:
         board.take_block(board.curr_x)
     else:
         board.set_block(board.curr_x)
 
 
-def random_block():
-    return Block(BlockColors(random.randint(2, len(BlockColors) - 1)))
+def print_board(board):
+    for y in board.board:
+        print(y)
 
 
-class Block(object):
-    def __init__(self, color=BlockColors.NO_COLOR):
-        self.color = color
-
-    def set_color(self, color):
-        self.color = color
+def random_color():
+    return BlockColors(random.randint(2, len(BlockColors) - 1))
 
 
 class Board(object):
@@ -45,35 +42,51 @@ class Board(object):
     def __init__(self, board_width=10, board_height=15, init_rows=3):
         self.board_width = board_width
         self.board_height = board_height
-        self.init_rows = init_rows
         self.curr_x = self.board_width - 1
         self.curr_y = self.board_height - 1
-        self.curr_block = Block(BlockColors.WHITE)
-        self.board = [Block()] * self.board_width * self.board_height
+        self.curr_block_color = BlockColors.WHITE
+        self.board = [[BlockColors.NO_COLOR for _ in range(self.board_width)] for _ in range(self.board_height)]
+        self.fill_board(init_rows)
+        # self.board[self.curr_y][self.curr_x] = self.curr_block_color
+        self.is_visited = [[False for _ in range(self.board_width)] for _ in range(self.board_height)]
         self.removed_blocks = 0
 
-    def block_at(self, x, y):
-        return self.board[(y * self.board_width) + x]
+    def color_at(self, x, y):
+        return self.board[y][x]
 
-    def set_block_at(self, x, y, block):
-        self.board.insert((y * self.board_width) + x, block)
-
-    def change_color(self, x, y, color):
-        self.board[(y * self.board_width) + x].set_color(color)
+    def set_color_at(self, x, y, color):
+        self.board[y][x] = color
 
     def fill_board(self, rows):
         for i in range(rows):
-            for j in range(self.board_width):
-                self.set_block_at(j, i, random_block())
+            self.board[i] = [random_color() for _ in range(self.board_width)]
 
-    def fill_with_blocks(self, x1, y1, x2, y2):
-        for i in range(y1, y2):
-            for j in range(x1, x2):
-                self.set_block_at(j, i, random_block())
+    def move_down(self):
+        bottom_row = self.find_bottom_block_in_board()
+        if bottom_row + 2 >= self.board_height:
+            return False
+
+        board_copy = self.board.copy()
+        last_row = self.board[self.board_height - 1]
+        new_row = [[random_color() for _ in range(self.board_width)]]
+        b = new_row + board_copy
+        self.board = b[:self.board_height - 1]
+        self.board.insert(self.board_height - 1, last_row)
+        return True
+
+    def move_up(self):
+        for y in range(self.board_height):
+            for x in range(self.board_width):
+                if self.color_at(x, y) == BlockColors.NO_COLOR:
+                    self.move_up_column(x, y)
+
+    def move_up_column(self, x, y):
+        for y in range(y, self.board_height-1):
+            self.board[y][x] = self.board[y+1][x]
 
     def take_block(self, x):
         y = self.find_bottom_block(x)
-        self.curr_block.set_color(self.block_at(x, y).color)
+        self.curr_block_color = self.color_at(x, y)
         self.remove_block(x, y)
 
     def try_move(self, new_x, new_y):
@@ -85,18 +98,58 @@ class Board(object):
 
     def set_block(self, x):
         y = self.find_bottom_block(x) + 1
-        self.change_color(x, y, self.curr_block.color)
-        self.curr_block.set_color(BlockColors.WHITE)
+        color = self.curr_block_color
+        self.set_color_at(x, y, color)
+        if self.count_equal(x, y, color) > 3:
+            self.remove_blocks(x, y, color)
+            self.move_up()
+        self.curr_block_color = BlockColors.WHITE
+        self.is_visited = [[False for _ in range(self.board_width)] for _ in range(self.board_height)]
+
+    def remove_blocks(self, x, y, color):
+        if x < 0 or x > self.board_width - 1 or y < 0 or y > self.board_height:
+            return
+        elif self.color_at(x, y) == color:
+            self.remove_block(x, y)
+            self.remove_blocks(x + 1, y, color)
+            self.remove_blocks(x - 1, y, color)
+            self.remove_blocks(x, y - 1, color)
+            self.remove_blocks(x, y + 1, color)
+            self.removed_blocks = self.removed_blocks + 1
 
     def remove_block(self, x, y):
-        self.change_color(x, y, BlockColors.NO_COLOR)
-        self.removed_blocks = self.removed_blocks + 1
+        self.set_color_at(x, y, BlockColors.NO_COLOR)
+
+    def clear(self):
+        self.board = [[BlockColors.NO_COLOR for _ in range(self.board_width)]
+                      for _ in range(self.board_height)]
+
+    def count_equal(self, x, y, color):
+        count = 0
+        if x < 0 or x > self.board_width - 1 or y < 0 or y > self.board_height:
+            return 0
+        elif self.color_at(x, y) == color and self.is_visited[y][x] is False:
+            self.is_visited[y][x] = True
+            count = count + 1
+            count = count + self.count_equal(x + 1, y, color)
+            count = count + self.count_equal(x, y - 1, color)
+            count = count + self.count_equal(x - 1, y, color)
+            count = count + self.count_equal(x, y + 1, color)
+            return count
+        else:
+            return 0
+
+    def is_have_equal_around(self, x, y, color):
+        return ((x-1 > 0 and self.color_at(x-1, y) == color) or
+                (x+1 < self.board_width and self.color_at(x+1, y) == color) or
+                (y-1 > 0 and self.color_at(x, y-1) == color) or
+                (y + 1 < self.board_height and self.color_at(x, y+1) == color))
 
     def find_bottom_block(self, column):
-        row = 0
-        while self.block_at(column, row).color != BlockColors.NO_COLOR:
-            row = row + 1
-        return row - 1
+        row = self.board_height - 2
+        while self.color_at(column, row) == BlockColors.NO_COLOR and row >= 0:
+            row = row - 1
+        return row
 
     def find_bottom_block_in_board(self):
         row = 0

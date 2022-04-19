@@ -1,9 +1,10 @@
 import sys
 import logic
 
-from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPainter, QColor, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QLabel, QFrame, QDesktopWidget, QApplication, QVBoxLayout, QWidget, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QLabel, QFrame, QDesktopWidget, QApplication, QVBoxLayout, QWidget, \
+    QHBoxLayout, QPushButton
 
 
 class AntiTetris(QMainWindow):
@@ -23,16 +24,16 @@ class AntiTetris(QMainWindow):
         self.show()
 
 
-class GameFrame(QWidget):
+class GameFrame(QFrame):
     msg2Statusbar = pyqtSignal(str)
     SPEED = 30
 
     def __init__(self, parent):
         super().__init__(parent)
         self.board = logic.Board()
-
         self.timer = QBasicTimer()
         self.setFocusPolicy(Qt.StrongFocus)
+        self.label = QLabel(self)
 
     def squareWidth(self):
         return self.contentsRect().width() // self.board.board_width
@@ -46,20 +47,30 @@ class GameFrame(QWidget):
 
     def game_over(self):
         self.board.clear()
-        label = QLabel(self)
-        label.setText("Game over")
-        label.setStyleSheet("color: blue;"
-                            "background-color: black;"
-                            "font: bold 100px;"
-                            "text-align: right;")  # todo выравнивание по центру и кнопка restart
-        label.move(0, 0)
-        label.resize(self.contentsRect().width(), self.contentsRect().height())
-
-        # pixmap = QPixmap("F:\\5. Projects python\\4sem\\task5\\src\\resources\\img.png")
-        # label.setPixmap(pixmap)
-
-        label.show()
+        self.label.setText("Game over")
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setStyleSheet("color: blue;"
+                                 "background-color: white;"
+                                 "font: bold 100px;")
+        self.label.move(0, 0)
+        self.label.resize(self.contentsRect().width(), self.contentsRect().height())
+        button = QPushButton('Restart', self)
+        button.resize(100, 50)
+        button.move(300, 450)
+        button.setStyleSheet("background-color: white;"
+                             "color: black;"
+                             "font: bold 20px;")
+        button.clicked.connect(self.on_restart)
+        layout = QVBoxLayout(self.label)
+        layout.setAlignment(Qt.AlignBottom)
+        layout.addWidget(button)
+        self.label.show()
         self.timer.stop()
+
+    @pyqtSlot()
+    def on_restart(self):
+        self.label.hide()
+        self.timer.start(self.SPEED, self)
 
     def keyPressEvent(self, event):
         key = event.key()
